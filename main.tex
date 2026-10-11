@@ -1,0 +1,235 @@
+\documentclass[french]{llncs}
+
+\usepackage[english, french]{babel}
+\usepackage[utf8]{inputenc}
+
+% --- Police ---
+\usepackage{newtxtext}
+\usepackage{newtxmath}
+% ---------------------------------------------------------
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+
+\usepackage{listings}
+\usepackage{subfig}
+\usepackage{hyperref}
+\usepackage{booktabs}
+
+%-----------------------------------------
+\title{Connaissant la latitude, la longitude et la population de sa ville, la structure topologique aide-t-elle à prédire le pays d'un aéroport~? \\
+       Étude comparative sur un réseau aérien mondial}
+
+\author{ Yennipena Jérémie \textsc{Coulibaly} \\
+         Michel Junior \textsc{Delanoue} }
+
+\institute{Université Claude Bernard Lyon 1, France \\
+\url{https://github.com/cyjere/rendu-tp-gnn-Coulibaly-and-Delanoue}}
+
+\lstset{
+    basicstyle=\small,
+    captionpos=b
+}
+
+\providecommand{\motcles}[1]{\textbf{Mots-clés:} #1}
+
+\pagestyle{headings}
+%-----------------------------------------
+
+\begin{document}
+
+    \renewcommand{\thelstlisting}{\arabic{lstlisting}}
+
+    \maketitle
+
+    \begin{abstract}
+        Nous étudions la classification de nœuds sur un réseau aérien mondial (3\,363 aéroports,
+        13\,547 liaisons) où la tâche consiste à prédire le pays d'un aéroport à partir de ses
+        attributs (longitude, latitude, population) et/ou du graphe des connexions aériennes.
+        Nous comparons des baselines classiques de machine learning et de deep learning
+        (régression logistique, Random Forest, MLP) entraînées sur les seules caractéristiques
+        des nœuds à des réseaux de neurones sur graphe (GCN, GAT, SGC) entraînés soit sur la
+        structure seule, soit sur les caractéristiques combinées à la structure, tous évalués
+        avec des pertes pondérées par classe et le macro-F1 sur cinq splits aléatoires pour
+        gérer le déséquilibre sévère des classes (212 pays, de 1 à 650 aéroports chacun).
+        Contrairement à l'attente habituelle, ajouter la structure du graphe n'améliore jamais
+        le meilleur modèle fondé sur les seules caractéristiques (Random Forest, macro-F1
+        $0,779 \pm 0,018$)~; la structure seule ne fait pas mieux que le hasard, et sa
+        combinaison avec les caractéristiques dégrade systématiquement les GNN. Nous montrons
+        que cela s'explique par une faible homophilie des arêtes (63,2\,\% des liaisons
+        relient deux aéroports du même pays), concentrée sur les plus grands hubs
+        internationaux, ce qui dilue le signal géographique sur lequel repose le passage de
+        messages.
+
+        \begin{keywords}
+            réseaux de neurones sur graphe, classification de nœuds, déséquilibre de classes,
+            réseau aérien, étude d'ablation
+        \end{keywords}
+    \end{abstract}
+
+%-----------------------------------------
+
+    \section{Introduction} \label{intro}
+
+    Les réseaux aériens forment un graphe naturel~: les aéroports sont des nœuds, les liaisons
+    directes des arêtes. Nous étudions si la \emph{structure} de ce graphe apporte une information
+    utile pour prédire le \textbf{pays} d'un aéroport au-delà de ses seules caractéristiques
+    individuelles, sur un graphe de 3\,363 aéroports et 13\,547 liaisons (longitude, latitude,
+    population de la ville, pays cible).
+
+    Notre problématique~: \emph{dans quelle mesure la topologie du réseau aérien améliore-t-elle
+    la prédiction du pays par rapport aux seules caractéristiques individuelles~?} Nous comparons
+    trois conditions~: (A) modèles classiques ML/DL sur les seules caractéristiques~; (B) GNN
+    entraînés uniquement sur la structure~; (C) mêmes GNN sur caractéristiques \emph{et} structure.
+    Cette décomposition isole la contribution propre de la topologie.
+
+    \section{État de l'art} \label{sect:eda}
+
+    Pour la condition graphe, nous retenons trois architectures. Le \textbf{GCN} \cite{Kipf2017}
+    moyenne la représentation d'un nœud avec celle de ses voisins, pondérée par le degré. Le
+    \textbf{SGC} \cite{Wu2019} supprime les non-linéarités et matrices de poids intermédiaires
+    pour ne garder que la propagation, ce qui teste l'apport réel de la non-linéarité. Le
+    \textbf{GAT} \cite{Velickovic2018} remplace la moyenne par un poids d'attention appris par
+    paire de nœuds~: nous testons s'il peut ignorer des voisins non pertinents en cas de faible
+    homophilie.
+
+    Pour les baselines sans graphe, le \textbf{Random Forest} \cite{Breiman2001} est un
+    classifieur non linéaire robuste adapté aux petites features continues, et le
+    \textbf{perceptron multicouche} \cite{Rumelhart1986} sert de baseline DL sans structure.
+    Le déséquilibre sévère (212 pays, 1 à 650 aéroports) justifie, d'après \cite{Wang2021},
+    une pondération de la perte par classe et une évaluation en macro-F1 plutôt qu'en accuracy.
+
+    \section{Données et protocole} \label{sect:protocol}
+
+    \paragraph{Données.} Le graphe est chargé depuis un fichier GraphML~: 3\,363 nœuds (aéroports),
+    13\,547 arêtes (liaisons), avec pour chaque nœud \texttt{lon}, \texttt{lat}, \texttt{population},
+    \texttt{city\_name} et \texttt{country} (cible). La cible comporte 212 classes brutes très
+    déséquilibrées (USA~: 650 aéroports, médiane~: 4, 62 pays à un seul aéroport), ce qui rend
+    impossible toute évaluation sur les plus petites classes.
+
+    \paragraph{Filtrage et split.} Nous retirons les pays à moins de 3 aéroports
+    (\texttt{MIN\_CLASS\_SIZE=3}), ramenant le problème à 126 classes sur 3\,253 nœuds et
+    12\,272 arêtes. Un split stratifié classique échoue encore sur ce seuil~: après une première
+    coupe train/reste, de nombreuses classes à 3 éléments n'ont plus qu'un seul exemple,
+    impossible à répartir entre validation et test. Nous utilisons donc un split par classe
+    garantissant au moins un exemple dans chacun des trois ensembles, avec un repli
+    proportionnel pour les classes plus grandes~: 69,0\,\%~/~15,5\,\%~/~15,5\,\%, répété sur 5 seeds.
+
+    \paragraph{Features.} Les coordonnées brutes \texttt{lon/lat} posent deux problèmes~:
+    longitude circulaire et singularités aux pôles. Nous testons donc un encodage sur la sphère
+    unité $(x,y,z) = (\cos(\text{lat})\cos(\text{lon}), \cos(\text{lat})\sin(\text{lon}), \sin(\text{lat}))$,
+    combiné à $\log(1+\text{population})$, standardisé sur le train uniquement. Cet encodage
+    améliore tous les modèles (section~\ref{sect:results}) et devient la représentation par défaut.
+
+    \paragraph{Déséquilibre et hyperparamètres.} Les modèles sklearn utilisent
+    \texttt{class\_weight="balanced"}~; les réseaux de neurones (MLP, GCN, GAT, SGC) une
+    \texttt{CrossEntropyLoss} pondérée par l'inverse de la fréquence de classe (calculée sur le
+    train de chaque seed). L'architecture du MLP (256 unités, 2 couches, \texttt{lr=0,005},
+    \texttt{dropout=0,1}) a été choisie par recherche sur la validation du seed~0 uniquement
+    (macro-F1~: 0,593~$\rightarrow$~0,684), jamais sur le test.
+
+    \section{Expériences et résultats} \label{sect:results}
+
+    Toutes les métriques sont moyennées sur 5 seeds (moyenne~$\pm$~écart-type), macro-F1 étant
+    la métrique principale.
+
+    \subsection{Condition A~: caractéristiques seules}
+
+    Le tableau~\ref{tab:features} compare les modèles sans graphe. L'encodage \texttt{xyz}
+    améliore tous les modèles par rapport à \texttt{lon/lat} (RF pondéré~: $0,577 \rightarrow 0,779$),
+    probablement parce qu'il évite les discontinuités aux frontières et capture mieux les distances
+    relatives. La pondération de la perte aide nettement le Random Forest ($+0,04$ de macro-F1)
+    mais pas le MLP, dont les deux versions sont équivalentes aux écarts-types près~: son effet
+    dépend donc du modèle et ne doit pas être supposé systématique. Ce résultat nuance l'idée reçue
+    selon laquelle la pondération est toujours bénéfique.
+
+    \begin{table}[ht]
+     \begin{center}
+       \scriptsize
+       \setlength{\tabcolsep}{4pt}
+       \renewcommand{\arraystretch}{0.8}
+       \begin{tabular}{l c c c}
+       \toprule
+       Modèle (features) & macro-F1 & balanced acc. & accuracy \\
+       \midrule
+       LogReg (xyz)                       & $0,285 \pm 0,011$ & $0,358 \pm 0,008$ & $0,491 \pm 0,013$ \\
+       RF pondéré (lon/lat)               & $0,577 \pm 0,007$ & $0,631 \pm 0,009$ & $0,771 \pm 0,010$ \\
+       \textbf{RF pondéré (xyz)}          & $\mathbf{0,779 \pm 0,018}$ & $\mathbf{0,816 \pm 0,013}$ & $0,868 \pm 0,010$ \\
+       RF non pondéré (xyz)               & $0,741 \pm 0,026$ & $0,769 \pm 0,025$ & $\mathbf{0,886 \pm 0,011}$ \\
+       MLP pondéré (xyz)                  & $0,613 \pm 0,011$ & $0,672 \pm 0,014$ & $0,785 \pm 0,009$ \\
+       MLP non pondéré (xyz)              & $0,618 \pm 0,035$ & $0,658 \pm 0,035$ & $0,846 \pm 0,019$ \\
+       \bottomrule
+       \end{tabular}
+      \caption{Condition A (features seules), 5 seeds. Meilleur macro-F1 en gras.} \label{tab:features}
+     \end{center}
+    \end{table}
+
+    \subsection{Conditions B et C~: structure seule, puis features + structure}
+
+    Le tableau~\ref{tab:graph} ajoute les GNN, entraînés soit sur une feature constante
+    (B~: topologie seule), soit sur les features \texttt{xyz} (C~: features + structure), avec
+    la même perte pondérée et le même protocole à 5 seeds.
+
+    \begin{table}[ht]
+     \begin{center}
+       \scriptsize
+       \setlength{\tabcolsep}{4pt}
+       \renewcommand{\arraystretch}{0.8}
+       \begin{tabular}{l c c c}
+       \toprule
+       Modèle (condition) & macro-F1 & balanced acc. & accuracy \\
+       \midrule
+       \textbf{RF pondéré (A, xyz)} & $\mathbf{0,779 \pm 0,018}$ & $\mathbf{0,816 \pm 0,013}$ & $\mathbf{0,868 \pm 0,010}$ \\
+       GCN (B, topologie seule)     & $0,003 \pm 0,004$ & $0,013 \pm 0,009$ & $0,007 \pm 0,005$ \\
+       GAT (B, topologie seule)     & $0,000 \pm 0,000$ & $0,008 \pm 0,000$ & $0,012 \pm 0,006$ \\
+       SGC (B, topologie seule)     & $0,000 \pm 0,000$ & $0,006 \pm 0,003$ & $0,002 \pm 0,001$ \\
+       GCN (C, features+structure)  & $0,493 \pm 0,020$ & $0,552 \pm 0,023$ & $0,698 \pm 0,011$ \\
+       GAT (C, features+structure)  & $0,252 \pm 0,042$ & $0,331 \pm 0,038$ & $0,474 \pm 0,049$ \\
+       SGC (C, features+structure)  & $0,370 \pm 0,031$ & $0,426 \pm 0,032$ & $0,579 \pm 0,032$ \\
+       \bottomrule
+       \end{tabular}
+      \caption{Conditions B et C, 5 seeds, mêmes features \texttt{xyz} que le Random Forest de référence (A).} \label{tab:graph}
+     \end{center}
+    \end{table}
+
+    Deux constats. La topologie seule (B) ne porte quasiment aucun signal~: les macro-F1
+    ($0,000$ à $0,003$) sont au niveau du hasard sur 126 classes ($1/126 \approx 0,008$).
+    La structure du réseau aérien, prise isolément, n'apporte donc aucune information
+    discriminante~: les connexions aériennes ne sont pas un proxy suffisant de l'appartenance
+    nationale. Ajouter la structure aux features (C) ne bat jamais le Random Forest de la
+    condition A et dégrade même les performances par rapport aux mêmes features sans graphe~:
+    le meilleur GNN (GCN) perd 0,29 point de macro-F1. Ce phénomène s'explique par la
+    propagation de bruit~: les voisins étrangers injectent des informations contradictoires
+    qui perturbent la représentation apprise, alors que le Random Forest, ignorant le graphe,
+    se concentre sur les seules caractéristiques géographiques.
+
+    \section{Discussion et conclusion} \label{sect:discussion}
+
+    \paragraph{Pourquoi la structure n'aide pas.} Les GNN à passage de messages supposent
+    implicitement que les voisins partagent la même classe. Or seulement \textbf{63,2\,\%} des
+    arêtes (7\,761 sur 12\,272) relient deux aéroports du même pays. Ce déficit d'homophilie est
+    concentré sur les plus gros hubs, qui pèsent le plus dans l'agrégation~: Paris (80\,\% de
+    voisins étrangers), Londres (93\,\%), Francfort (91\,\%), Amsterdam (99\,\%) — contre 24\,\%
+    pour Chicago, à dominante domestique. Les GNN sont donc pénalisés par les hubs fortement
+    connectés à l'international, qui brouillent le signal local~; à l'inverse, un pays à réseau
+    domestique dense comme les États-Unis pourrait bénéficier d'une agrégation plus homogène.
+
+    \paragraph{Diagnostic par classe.} Les erreurs du meilleur modèle (Random Forest, xyz) ne sont
+    pas aléatoires~: le macro-F1 moyen passe de $0,674$ pour les classes à $\leq 5$ aéroports
+    d'entraînement (n=46) à $0,858$ au-delà (n=80), et 7 des 8 pires classes sont confondues avec
+    leur voisin géographique réel et plus représenté (Bosnie~$\rightarrow$~Croatie,
+    Cambodge~$\rightarrow$~Thaïlande, Cameroun~$\rightarrow$~Nigeria). Un petit pays n'échoue donc
+    pas par manque de données seul, mais quand sa frontière de décision est absorbée par un grand
+    voisin dans l'espace des features.
+
+    \paragraph{Conclusion.} Sur ce jeu de données, la structure topologique du réseau aérien
+    \textbf{n'améliore pas} la prédiction du pays~: elle la dégrade, car la connectivité aérienne
+    est largement internationale et la position géographique porte déjà l'essentiel du signal.
+    Limites~: un seul graphe/une seule tâche, d'autres architectures non testées (GraphSAGE, APPNP),
+    et l'observation sur Chicago à vérifier systématiquement.
+
+    \newpage
+    \bibliographystyle{splncs03}
+    \bibliography{bibM2.bib}
+
+\end{document}
