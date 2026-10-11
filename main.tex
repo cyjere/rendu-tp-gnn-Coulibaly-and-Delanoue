@@ -38,32 +38,31 @@
 
 \begin{document}
 
+    \renewcommand{\abstractname}{Abstract} \\
     \renewcommand{\thelstlisting}{\arabic{lstlisting}}
 
     \maketitle
 
     \begin{abstract}
-        Nous étudions la classification de nœuds sur un réseau aérien mondial (3\,363 aéroports,
-        13\,547 liaisons) où la tâche consiste à prédire le pays d'un aéroport à partir de ses
-        attributs (longitude, latitude, population) et/ou du graphe des connexions aériennes.
-        Nous comparons des baselines classiques de machine learning et de deep learning
-        (régression logistique, Random Forest, MLP) entraînées sur les seules caractéristiques
-        des nœuds à des réseaux de neurones sur graphe (GCN, GAT, SGC) entraînés soit sur la
-        structure seule, soit sur les caractéristiques combinées à la structure, tous évalués
-        avec des pertes pondérées par classe et le macro-F1 sur cinq splits aléatoires pour
-        gérer le déséquilibre sévère des classes (212 pays, de 1 à 650 aéroports chacun).
-        Contrairement à l'attente habituelle, ajouter la structure du graphe n'améliore jamais
-        le meilleur modèle fondé sur les seules caractéristiques (Random Forest, macro-F1
-        $0,779 \pm 0,018$)~; la structure seule ne fait pas mieux que le hasard, et sa
-        combinaison avec les caractéristiques dégrade systématiquement les GNN. Nous montrons
-        que cela s'explique par une faible homophilie des arêtes (63,2\,\% des liaisons
-        relient deux aéroports du même pays), concentrée sur les plus grands hubs
-        internationaux, ce qui dilue le signal géographique sur lequel repose le passage de
-        messages.
+        We study node classification on a global air transport network (3,363 airports,
+        13,547 links) where the task is to predict the country of an airport from its
+        attributes (longitude, latitude, population) and/or the graph of air connections.
+        We compare classical machine learning and deep learning baselines
+        (logistic regression, Random Forest, MLP) trained on node features alone with
+        graph neural networks (GCN, GAT, SGC) trained either on structure alone or on
+        features combined with structure, all evaluated with class-weighted losses and
+        macro-F1 over five random splits to handle severe class imbalance (212 countries,
+        ranging from 1 to 650 airports each). Contrary to the usual expectation, adding
+        graph structure never improves the best feature-only model (Random Forest,
+        macro-F1 $0.779 \pm 0.018$); structure alone performs no better than chance, and
+        combining it with features systematically degrades the GNNs. We show that this is
+        explained by low edge homophily (63.2\% of links connect two airports in the same
+        country), concentrated on the largest international hubs, which dilutes the
+        geographical signal on which message passing relies.
 
         \begin{keywords}
-            réseaux de neurones sur graphe, classification de nœuds, déséquilibre de classes,
-            réseau aérien, étude d'ablation
+            graph neural networks, node classification, class imbalance,
+            air transport network, ablation study
         \end{keywords}
     \end{abstract}
 
