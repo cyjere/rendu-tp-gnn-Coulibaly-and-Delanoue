@@ -56,7 +56,7 @@ Toutes les métriques sont moyennées sur 5 seeds fixées (0 à 4), pour une rep
 
 ### 4. Rapport
 
-Le rapport est dans `templateRapportM2IA-GNN/`.
+Voir main.pdf.
 
 ## Usage de l'IA générative
 
