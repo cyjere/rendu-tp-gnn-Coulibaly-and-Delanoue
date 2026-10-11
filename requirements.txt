@@ -1,0 +1,16 @@
+# Dépendances figées sur la configuration utilisée pour produire les résultats du rapport.
+# Testé avec Python 3.13.
+#
+# torch peut nécessiter une commande d'installation différente selon votre plateforme
+# (CPU / CUDA) : voir https://pytorch.org/get-started/locally/ si l'installation
+
+numpy==2.5.3
+pandas==3.0.6
+matplotlib==3.11.2
+seaborn==0.13.2
+networkx==3.6.1
+plotly==7.1.0
+scikit-learn==1.9.1
+scipy==1.18.1
+torch==2.14.0
+torch-geometric==2.8.0.post1

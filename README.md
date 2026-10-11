@@ -2,134 +2,71 @@
 
 ## Auteurs
 
-Ce projet a été réalisé par Yennipena Jérémie COULIBALY et Michel Junior DELANOUE dans le cadre du cours **Intelligence Artificielle Bio-Inspirée** — Université Lyon 1.
+Projet réalisé par Yennipena Jérémie COULIBALY et Michel Junior DELANOUE dans le cadre du cours **Intelligence Artificielle Bio-Inspirée** — Université Claude Bernard Lyon 1.
 
 ## Question de recherche
 
 > **Dans quelle mesure la structure topologique du réseau aérien améliore-t-elle la prédiction du pays d'un aéroport par rapport à ses seules caractéristiques individuelles ?**
 
-Ce projet explore l'apport de la structure du graphe (connexions entre aéroports) pour la tâche de classification de nœuds, en comparant des modèles qui utilisent uniquement les attributs individuels (longitude, latitude, population, ville) à des modèles qui exploitent également la topologie du réseau aérien.
+Le détail de la démarche, du protocole expérimental et des résultats se trouve dans le rapport (`templateRapportM2IA-GNN/main.pdf`). Ce README se concentre sur la reproductibilité.
 
 ## Structure du projet
 
 ```text
 .
-├── gnn_tp.ipynb   # Notebook du projet
-├── airportsAndCoordAndPop.graphml   # Graphe du réseau aérien (format GraphML)
-└── README.md                        # Ce fichier
+├── final_notebook.ipynb              # Notebook à exécuter — voir ci-dessous
+├── gnn_tp.ipynb                      # [OBSOLÈTE] expérimentation, non maintenu
+├── projet_gnn.ipynb                  # [OBSOLÈTE] expérimentation, non maintenu
+├── projet_gnn_cmmented.ipynb         # [OBSOLÈTE] expérimentation, non maintenu
+├── airportsAndCoordAndPop.graphml    # Graphe du réseau aérien (format GraphML)
+├── requirements.txt                  # Dépendances Python, versions figées
+├── templateRapportM2IA-GNN/          # Rapport LaTeX (main.tex → main.pdf)
+└── README.md
 ```
 
----
+## Notebook à considérer
 
-## Données
+**`final_notebook.ipynb` est le seul notebook à exécuter.** Les autres notebooks à la racine (`gnn_tp.ipynb`, `projet_gnn.ipynb`, `projet_gnn_cmmented.ipynb`) sont des expérimentations intermédiaires conservées pour l'historique du projet, mais ils sont obsolètes et ne reflètent pas le protocole final décrit dans le rapport.
 
-### Source
+## Reproductibilité
 
-Le graphe est chargé depuis un fichier **GraphML** (`airportsAndCoordAndPop.graphml`) contenant :
-
-- **3 363 nœuds** (aéroports)
-- **13 547 arêtes** (liaisons aériennes)
-
-### Attributs des nœuds
-
-Chaque nœud (aéroport) possède les attributs suivants :
-
-| Attribut | Type | Description |
-|---|---|---|
-| `lon` | float | Longitude de l'aéroport |
-| `lat` | float | Latitude de l'aéroport |
-| `population` | int | Population de la ville desservie |
-| `country` | string | **Pays de l'aéroport** (variable cible) |
-| `city_name` | string | Nom de la ville |
-
-## Objectif de la tâche
-
-**Classification de nœuds (Node Classification)** :
-
-- Prédire le **pays** d'un aéroport à partir de ses caractéristiques.
-- Comparer deux approches :
-  1. **Baseline** : utilisation des seules caractéristiques individuelles (`lon`, `lat`, `population`).
-  2. **GNN** : utilisation conjointe des caractéristiques et de la structure topologique du graphe (liens entre les aéroports).
-
-## Approche méthodologique
-
-### 1. Exploration et visualisation
-
-- Chargement du graphe avec `networkx`.
-- Statistiques de base : nombre de nœuds et d'arêtes.
-- Visualisation initiale (`spring_layout`), peu lisible pour un graphe de cette taille.
-- Amélioration de la visualisation pour un grand graphe (sous-échantillonnage, layout optimisé).
-
-### 2. Encodage des caractéristiques
-
-- Encodage de la variable cible `country` avec `LabelEncoder`.
-- Normalisation des caractéristiques numériques (`lon`, `lat`, `population`).
-- Encodage des attributs catégoriels (`city_name`, si utilisé).
-
-### 3. Modélisation GNN
-
-Modèles utilisés via `torch_geometric` :
-
-- **GCNConv** (*Graph Convolutional Network*).
-- **VGAE** (*Variational Graph Auto-Encoder*), pour l'apprentissage non supervisé et les embeddings.
-- Autres couches GNN, selon le notebook.
-
-### 4. Évaluation
-
-- Séparation des données en ensembles d'entraînement, de validation et de test (*train / validation / test*).
-- Métriques : accuracy et matrice de confusion.
-- Comparaison de la baseline et du modèle GNN.
-
-### 5. Analyse des embeddings
-
-- Visualisation t-SNE des embeddings appris.
-- Analyse de la séparation des classes (pays) dans l'espace latent.
-
-## Dépendances
-
-Installation des principales dépendances :
+### 1. Environnement
 
 ```bash
-pip install numpy pandas matplotlib seaborn scikit-learn networkx torch torch-geometric tqdm
+python -m venv venv
+source venv/bin/activate      # ou venv\Scripts\activate sous Windows
+pip install -r requirements.txt
 ```
 
-| Bibliothèque | Usage |
-|---|---|
-| `numpy` | Calcul numérique |
-| `pandas` | Manipulation des données |
-| `matplotlib`, `seaborn` | Visualisation |
-| `scikit-learn` | Prétraitement, métriques et t-SNE |
-| `networkx` | Manipulation et visualisation du graphe |
-| `torch` | Framework de deep learning |
-| `torch_geometric` | Couches et modèles GNN (GCNConv, VGAE, etc.) |
-| `tqdm` | Barres de progression |
+Testé avec Python 3.13. Voir la note dans `requirements.txt` si l'installation de `torch` pose problème selon votre configuration (CPU/CUDA).
 
-## Exécution
+### 2. Données
 
-1. Cloner ou télécharger le projet.
-2. Placer le fichier `airportsAndCoordAndPop.graphml` à la racine du projet.
-3. Ouvrir le notebook souhaité, par exemple :
+Le fichier `airportsAndCoordAndPop.graphml` est déjà présent à la racine du projet — aucune étape supplémentaire n'est nécessaire.
 
-   ```bash
-   jupyter notebook gnn_tp-grapheNetworks.ipynb
-   ```
+### 3. Exécution
 
-4. Exécuter les cellules du notebook dans l'ordre.
+Ouvrir `final_notebook.ipynb` (Jupyter ou VS Code) et exécuter toutes les cellules dans l'ordre, de haut en bas. Le notebook est organisé en deux parties :
 
-> **Remarque :** adaptez le nom du notebook à celui que vous souhaitez exécuter. Les noms indiqués dans la structure du projet doivent correspondre aux fichiers réellement présents dans le dépôt.
+1. **Prétraitement** — chargement du graphe, qualité des données, filtrage des classes trop petites, split train/val/test.
+2. **Partie 1 — Machine Learning / Deep Learning** — baselines sur les caractéristiques des nœuds seules (LogisticRegression, RandomForest, MLP).
+3. **Partie 2 — Graphe (GNN)** — GCN, GAT, SGC, comparés en conditions structure seule / features + structure.
 
-## Résultats attendus
+Toutes les métriques sont moyennées sur 5 seeds fixées (0 à 4), pour une reproductibilité exacte des résultats du rapport. L'exécution complète du notebook prend environ 15 à 20 minutes sur un CPU standard (les boucles d'entraînement à 5 seeds sont la partie la plus longue).
 
-- **Baseline** : les performances peuvent être limitées, car les caractéristiques individuelles (notamment latitude et longitude) ne suffisent pas toujours à distinguer précisément les pays, par exemple dans certaines régions où les aéroports sont proches géographiquement.
-- **GNN** : le modèle peut améliorer la prédiction grâce à la propagation d'information via les connexions aériennes.
-- **Conclusion attendue** : la topologie du réseau aérien peut apporter une information complémentaire utile à la classification des aéroports par pays.
+### 4. Rapport
 
-> Les améliorations de performance mentionnées ci-dessus sont des hypothèses à vérifier expérimentalement ; elles ne constituent pas des résultats mesurés tant que les notebooks n'ont pas été exécutés et évalués.
+Le rapport est dans `templateRapportM2IA-GNN/`.
 
-## Pistes d'amélioration
+## Usage de l'IA générative
 
-- Ajouter des caractéristiques de centralité : degré, *betweenness centrality*, PageRank.
-- Tester d'autres architectures GNN : GraphSAGE, GAT et GIN.
-- Utiliser des embeddings de graphe pré-entraînés : Node2Vec et DeepWalk.
-- Gérer le déséquilibre des classes, notamment la forte représentation de certains pays.
-- Mettre en place une validation croisée et une recherche d'hyperparamètres.
+Conformément aux consignes, nous précisons ici l'usage fait de l'IA générative dans ce projet.
+
+- **Modèle utilisé** : Claude (Anthropic), modèle Claude Sonnet 5.
+- **Rédaction** : l'IA a été utilisée pour générer un premier brouillon de ce README, ensuite relu et corrigé par nous.
+- **État de l'art** : pour un premier repérage rapide des références pertinentes, nous avons notamment utilisé [Elicit](https://elicit.com), un outil de recherche bibliographique qui s'appuie lui-même sur de la gen IA en arrière-plan.
+- **Aide sur le code** : nous avons utilisé l'IA générative comme assistant de programmation, par exemple pour :
+  - Trouver une implémentation existante plutôt que la réimplémenter — *« On veut utiliser une fonction de coût pondérée, y a-t-il déjà une implémentation dans scikit-learn ? »*
+  - Choisir un outil adapté à un besoin de visualisation — *« Nous avons un énorme graphe mais les nœuds ont des attributs lon/lat, ce serait plus lisible si on pouvait tout afficher sur une carte »* (l'IA a proposé Plotly, utilisé dans le notebook pour la carte interactive du réseau aérien).
+
+Toutes les analyses, choix méthodologiques, interprétations des résultats et le code final restent de notre responsabilité. L'IA a servi d'assistant ponctuel, pas de source des conclusions du projet.

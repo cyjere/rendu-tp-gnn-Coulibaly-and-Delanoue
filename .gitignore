@@ -1,2 +1,12 @@
 .DS_Store
 .ipynb_checkpoints/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.bcf
+*.out
+*.log
+*.xml
+*.synctex.gz
